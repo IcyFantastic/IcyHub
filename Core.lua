@@ -451,17 +451,17 @@ local Features: FeaturesList = {
 					Luna:Destroy()
 				end
 			}
-		},
-		{
-			Element = "Button",
-			Info = {
-				Name = "Infinity Yield",
-				Description = "Load Infinity Yield, a powerful admin script",
-				Callback = function()
-					loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-				end
-			}
 		}
+		-- {
+		-- 	Element = "Button",
+		-- 	Info = {
+		-- 		Name = "Infinity Yield",
+		-- 		Description = "Load Infinity Yield, a powerful admin script",
+		-- 		Callback = function()
+		-- 			loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+		-- 		end
+		-- 	}
+		-- }
 	}
 }
 
