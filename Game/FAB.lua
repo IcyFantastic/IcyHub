@@ -154,36 +154,53 @@ local Baits = require(ReplicatedStorage.Shared.Data.Baits)
 
 -- urutan fix bait
 local baitOrder = {"Common", "Uncommon", "Rare", "Epic", "Legendary"}
-local rarityToBait = {}
+local rarityToBaits = {}
+
+-- simpan semua bait sesuai rarity
 for baitName, baitData in pairs(Baits) do
-	local rarity = baitData.Rarity or "Common"
-	if table.find(baitOrder, rarity) then
-		rarityToBait[rarity] = baitName
-	end
+    local rarity = baitData.Rarity or "Common"
+    if table.find(baitOrder, rarity) then
+        rarityToBaits[rarity] = rarityToBaits[rarity] or {}
+        table.insert(rarityToBaits[rarity], baitName)
+    end
 end
 
+-- Dropdown pilih rarity
 Tab:CreateDropdown({
-	Name = "Select Bait",
-	Description = "Select the bait you want to use",
-	Options = baitOrder,
-	CurrentOption = {},
-	MultipleOptions = true,
-	Callback = function() end
+    Name = "Select Bait",
+    Description = "Select the bait you want to use",
+    Options = baitOrder,
+    CurrentOption = {},
+    MultipleOptions = true,
+    Callback = function() end
 }, "SelectBait")
 
+-- Auto Buy Toggle
 Tab:CreateToggle({
-	Name = "Auto Buy Selected Bait",
-	Callback = function()
-		while Flags.AutoBuySelectedBait.CurrentValue and task.wait(0.2) do
-			for _, selectedRarity in ipairs(Flags.SelectBait.CurrentOption) do
-				local baitName = rarityToBait[selectedRarity]
-				if baitName then
-					Services.BaitService.RF.PurchaseBait:InvokeServer(baitName)
-				end
-			end
-		end
-	end
+    Name = "Auto Buy Selected Bait",
+    Callback = function(Value)
+        task.spawn(function()
+            while Value do
+                for _, selectedRarity in ipairs(Flags.SelectBait.CurrentOption) do
+                    local baitList = rarityToBaits[selectedRarity]
+                    if baitList then
+                        for _, baitName in ipairs(baitList) do
+                            -- kalau punya fungsi cek stock, pake ini:
+                            -- local canBuy = Services.BaitService.RF.CheckBaitStock:InvokeServer(baitName)
+                            -- if canBuy then
+                                Services.BaitService.RF.PurchaseBait:InvokeServer(baitName)
+                                Notify("Auto Buy", "Tried buying " .. baitName, "check")
+                                break -- cukup beli 1 dari rarity itu
+                            -- end
+                        end
+                    end
+                end
+                task.wait(1) -- jangan spam terlalu cepat
+            end
+        end)
+    end
 }, "AutoBuySelectedBait")
+
 
 Tab:CreateToggle({
 	Name = "Auto Collect Money",
@@ -214,32 +231,38 @@ Tab:CreateDropdown({
 	Callback = function() end
 }, "SelectFishRarity")
 
--- Auto Favorite Fish (pakai Unit + RemoteEvent)
+-- Auto Favorite Unit (fix Callback Error + pakai Value param)
 Tab:CreateToggle({
-	Name = "Auto Favorite Fish",
-	Callback = function()
-		while Flags.AutoFavoriteFish.CurrentValue and task.wait(2) do
-			local inventory = Services.FishingService.RF.GetInventory:InvokeServer()
-			if inventory then
-				for _, unit in ipairs(inventory) do
-					local fishInfo = unit.UnitType and unit.Rarity and {
-						Name = unit.UnitType,
-						Rarity = unit.Rarity
-					} or nil
+	Name = "Auto Favorite Unit",
+	CurrentValue = false,
+	Flag = "AutoFavoriteUnit",
+	Callback = function(Value)
+		-- Jalankan loop di thread terpisah biar nggak blocking
+		task.spawn(function()
+			while Value do
+				local inventory = Services.FishingService.RF.GetInventory:InvokeServer()
+				if inventory then
+					for _, unit in ipairs(inventory) do
+						local fishInfo = unit.UnitType and unit.Rarity and {
+							Name = unit.UnitType,
+							Rarity = unit.Rarity
+						} or nil
 
-					if fishInfo then
-						for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption) do
-							if fishInfo.Rarity == selectedRarity and not unit.IsFavorite then
-								Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unit.Id, true)
-								Notify("Auto Favorite", "Favorited " .. fishInfo.Name .. " (" .. fishInfo.Rarity .. ")", "check")
+						if fishInfo then
+							for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption or {}) do
+								if fishInfo.Rarity == selectedRarity and not unit.IsFavorite then
+									Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unit.Id, true)
+									Notify("Auto Favorite", "Favorited " .. fishInfo.Name .. " (" .. fishInfo.Rarity .. ")", "check")
+								end
 							end
 						end
 					end
 				end
+				task.wait(2)
 			end
-		end
+		end)
 	end
-}, "AutoFavoriteFish")
+}, "AutoFavoriteUnit")
 
 
 -- QoL Tab
