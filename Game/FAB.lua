@@ -178,28 +178,30 @@ Tab:CreateDropdown({
 -- Auto Buy Toggle
 Tab:CreateToggle({
     Name = "Auto Buy Selected Bait",
-    Callback = function(Value)
-        task.spawn(function()
-            while Value do
-                for _, selectedRarity in ipairs(Flags.SelectBait.CurrentOption) do
-                    local baitList = rarityToBaits[selectedRarity]
-                    if baitList then
-                        for _, baitName in ipairs(baitList) do
-                            -- kalau punya fungsi cek stock, pake ini:
-                            -- local canBuy = Services.BaitService.RF.CheckBaitStock:InvokeServer(baitName)
-                            -- if canBuy then
-                                Services.BaitService.RF.PurchaseBait:InvokeServer(baitName)
-                                Notify("Auto Buy", "Tried buying " .. baitName, "check")
-                                break -- cukup beli 1 dari rarity itu
-                            -- end
+    Callback = function(state)
+        if state then
+            task.spawn(function()
+                while Flags.AutoBuySelectedBait.CurrentValue do
+                    for _, selectedRarity in ipairs(Flags.SelectBait.CurrentOption) do
+                        local baitList = rarityToBaits[selectedRarity]
+                        if baitList then
+                            for _, baitName in ipairs(baitList) do
+                                local baitData = Baits[baitName]
+                                if baitData and (baitData.Stock or 1) > 0 then
+                                    Services.BaitService.RF.PurchaseBait:InvokeServer(baitName)
+                                    Notify("Auto Buy", "Bought " .. baitName, "check")
+                                    break -- cukup beli 1 bait dari rarity ini
+                                end
+                            end
                         end
                     end
+                    task.wait(1)
                 end
-                task.wait(1) -- jangan spam terlalu cepat
-            end
-        end)
+            end)
+        end
     end
 }, "AutoBuySelectedBait")
+
 
 
 Tab:CreateToggle({
