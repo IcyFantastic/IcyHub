@@ -175,33 +175,28 @@ Tab:CreateDropdown({
     Callback = function() end
 }, "SelectBait")
 
--- Auto Buy Toggle
+-- Auto Buy Toggle (sekali jalan, no loop)
 Tab:CreateToggle({
     Name = "Auto Buy Selected Bait",
     Callback = function(state)
         if state then
-            task.spawn(function()
-                while Flags.AutoBuySelectedBait.CurrentValue do
-                    for _, selectedRarity in ipairs(Flags.SelectBait.CurrentOption) do
-                        local baitList = rarityToBaits[selectedRarity]
-                        if baitList then
-                            for _, baitName in ipairs(baitList) do
-                                local baitData = Baits[baitName]
-                                if baitData and (baitData.Stock or 1) > 0 then
-                                    Services.BaitService.RF.PurchaseBait:InvokeServer(baitName)
-                                    Notify("Auto Buy", "Bought " .. baitName, "check")
-                                    break -- cukup beli 1 bait dari rarity ini
-                                end
-                            end
+            for _, selectedRarity in ipairs(Flags.SelectBait.CurrentOption) do
+                local baitList = rarityToBaits[selectedRarity]
+                if baitList then
+                    for _, baitName in ipairs(baitList) do
+                        local baitData = Baits[baitName]
+                        if baitData and (baitData.Stock or 1) > 0 then
+                            Services.BaitService.RF.PurchaseBait:InvokeServer(baitName)
+                            Notify("Auto Buy", "Bought " .. baitName, "check")
+                            break -- cukup beli 1 bait dari rarity ini
                         end
                     end
-                    task.wait(1)
                 end
-            end)
+            end
+            Flags.AutoBuySelectedBait:SetValue(false) -- matiin toggle otomatis
         end
     end
 }, "AutoBuySelectedBait")
-
 
 
 Tab:CreateToggle({
