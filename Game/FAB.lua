@@ -220,36 +220,30 @@ Tab:CreateDropdown({
 	Callback = function() end
 }, "SelectFishRarity")
 
--- Auto Favorite pas dapet ikan baru via RequestFish
+-- Auto Favorite pas dapet ikan via FishBite
 Tab:CreateToggle({
 	Name = "Auto Favorite New Fish",
 	CurrentValue = false,
 	Flag = "AutoFavoriteNewFish",
 	Callback = function(Value)
 		if Value then
-			-- hook metamethod untuk RemoteFunction RequestFish
-			oldInvoke = hookfunction(Services.FishingService.RF.RequestFish.InvokeServer, function(self, ...)
-				local result = oldInvoke(self, ...)
-
-				if result and result.Unit and result.Unit.Rarity then
+			-- connect ke event FishBite
+			_autoFavConn = Services.FishingService.RE.FishBite.OnClientEvent:Connect(function(fishData)
+				-- pastikan fishData ada Rarity & Id
+				if fishData and fishData.Rarity and fishData.Id then
 					for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption or {}) do
-						if result.Unit.Rarity == selectedRarity then
-							local unitId = result.Unit.Id or result.Unit.UnitId or result.Unit.id
-							if unitId then
-								Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unitId, true)
-								Notify("Auto Favorite", "Favorited " .. result.Unit.UnitType .. " (" .. result.Unit.Rarity .. ")", "check")
-							end
+						if fishData.Rarity == selectedRarity then
+							Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(fishData.Id, true)
+							Notify("Auto Favorite", "Favorited " .. (fishData.UnitType or "Unknown") .. " (" .. fishData.Rarity .. ")", "check")
 						end
 					end
 				end
-
-				return result
 			end)
 		else
-			-- matikan hook kalau toggle off
-			if oldInvoke then
-				hookfunction(Services.FishingService.RF.RequestFish.InvokeServer, oldInvoke)
-				oldInvoke = nil
+			-- matikan listener kalau toggle off
+			if _autoFavConn then
+				_autoFavConn:Disconnect()
+				_autoFavConn = nil
 			end
 		end
 	end
