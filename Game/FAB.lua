@@ -202,52 +202,52 @@ Tab:CreateToggle({
 	end
 }, "AutoCollectMoney")
 
--- Favorite Tab
-Tab:CreateSection("Favorite")
+-- -- Favorite Tab
+-- Tab:CreateSection("Favorite")
 
--- fix urutan rarity ikan
-local fishRarityOrder = {
-	"Common", "Uncommon", "Rare", "Epic", "Legendary",
-	"Mythic", "Secret", "Abyssal", "Transcendent"
-}
+-- -- fix urutan rarity ikan
+-- local fishRarityOrder = {
+-- 	"Common", "Uncommon", "Rare", "Epic", "Legendary",
+-- 	"Mythic", "Secret", "Abyssal", "Transcendent"
+-- }
 
-Tab:CreateDropdown({
-	Name = "Select Fish Rarity",
-	Description = "Select the rarity of fish you want to auto-favorite",
-	Options = fishRarityOrder,
-	CurrentOption = {},
-	MultipleOptions = true,
-	Callback = function() end
-}, "SelectFishRarity")
+-- Tab:CreateDropdown({
+-- 	Name = "Select Fish Rarity",
+-- 	Description = "Select the rarity of fish you want to auto-favorite",
+-- 	Options = fishRarityOrder,
+-- 	CurrentOption = {},
+-- 	MultipleOptions = true,
+-- 	Callback = function() end
+-- }, "SelectFishRarity")
 
--- Auto Favorite pas dapet ikan via FishBite
-Tab:CreateToggle({
-	Name = "Auto Favorite New Fish",
-	CurrentValue = false,
-	Flag = "AutoFavoriteNewFish",
-	Callback = function(Value)
-		if Value then
-			-- connect ke event FishBite
-			_autoFavConn = Services.FishingService.RE.FishBite.OnClientEvent:Connect(function(fishData)
-				-- pastikan fishData ada Rarity & Id
-				if fishData and fishData.Rarity and fishData.Id then
-					for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption or {}) do
-						if fishData.Rarity == selectedRarity then
-							Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(fishData.Id, true)
-							Notify("Auto Favorite", "Favorited " .. (fishData.UnitType or "Unknown") .. " (" .. fishData.Rarity .. ")", "check")
-						end
-					end
-				end
-			end)
-		else
-			-- matikan listener kalau toggle off
-			if _autoFavConn then
-				_autoFavConn:Disconnect()
-				_autoFavConn = nil
-			end
-		end
-	end
-}, "AutoFavoriteNewFish")
+-- -- Auto Favorite pas dapet ikan via FishBite
+-- Tab:CreateToggle({
+-- 	Name = "Auto Favorite New Fish",
+-- 	CurrentValue = false,
+-- 	Flag = "AutoFavoriteNewFish",
+-- 	Callback = function(Value)
+-- 		if Value then
+-- 			-- connect ke event FishBite
+-- 			_autoFavConn = Services.FishingService.RE.FishBite.OnClientEvent:Connect(function(fishData)
+-- 				-- pastikan fishData ada Rarity & Id
+-- 				if fishData and fishData.Rarity and fishData.Id then
+-- 					for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption or {}) do
+-- 						if fishData.Rarity == selectedRarity then
+-- 							Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(fishData.Id, true)
+-- 							Notify("Auto Favorite", "Favorited " .. (fishData.UnitType or "Unknown") .. " (" .. fishData.Rarity .. ")", "check")
+-- 						end
+-- 					end
+-- 				end
+-- 			end)
+-- 		else
+-- 			-- matikan listener kalau toggle off
+-- 			if _autoFavConn then
+-- 				_autoFavConn:Disconnect()
+-- 				_autoFavConn = nil
+-- 			end
+-- 		end
+-- 	end
+-- }, "AutoFavoriteNewFish")
 
 -- QoL Tab
 local Tab: Tab = Window:CreateTab({
