@@ -191,8 +191,6 @@ Tab:CreateToggle({
     end
 }, "AutoBuySelectedBait")
 
-
-
 Tab:CreateToggle({
 	Name = "Auto Collect Money",
 	Callback = function()
@@ -222,28 +220,28 @@ Tab:CreateDropdown({
 	Callback = function() end
 }, "SelectFishRarity")
 
--- Auto Favorite Unit (fix Callback Error + pakai Value param)
+-- Auto Favorite Unit (pakai inventory.Units)
 Tab:CreateToggle({
 	Name = "Auto Favorite Unit",
 	CurrentValue = false,
 	Flag = "AutoFavoriteUnit",
 	Callback = function(Value)
-		-- Jalankan loop di thread terpisah biar nggak blocking
 		task.spawn(function()
 			while Value do
 				local inventory = Services.FishingService.RF.GetInventory:InvokeServer()
-				if inventory then
-					for _, unit in ipairs(inventory) do
-						local fishInfo = unit.UnitType and unit.Rarity and {
-							Name = unit.UnitType,
-							Rarity = unit.Rarity
-						} or nil
-
-						if fishInfo then
+				if inventory and inventory.Units then
+					for _, unit in ipairs(inventory.Units) do
+						if unit.UnitType and unit.Rarity then
+							local isFav = unit.IsFavorite or false
 							for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption or {}) do
-								if fishInfo.Rarity == selectedRarity and not unit.IsFavorite then
-									Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unit.Id, true)
-									Notify("Auto Favorite", "Favorited " .. fishInfo.Name .. " (" .. fishInfo.Rarity .. ")", "check")
+								if unit.Rarity == selectedRarity and not isFav then
+									local unitId = unit.Id or unit.UnitId or unit.id
+									if unitId then
+										Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unitId, true)
+										Notify("Auto Favorite", "Favorited " .. unit.UnitType .. " (" .. unit.Rarity .. ")", "check")
+									else
+										warn("[AutoFavorite] Unit ga ada field Id:", unit)
+									end
 								end
 							end
 						end
@@ -254,7 +252,6 @@ Tab:CreateToggle({
 		end)
 	end
 }, "AutoFavoriteUnit")
-
 
 -- QoL Tab
 local Tab: Tab = Window:CreateTab({
