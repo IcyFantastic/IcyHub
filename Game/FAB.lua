@@ -229,6 +229,26 @@ Tab:CreateToggle({
 		task.spawn(function()
 			while Value do
 				local inventory = Services.FishingService.RF.GetInventory:InvokeServer()
+
+				-- 🔎 DEBUG PRINT START
+				if inventory then
+					print("===== Inventory Debug =====")
+					for k, v in pairs(inventory) do
+						print("Key:", k, "Value:", v)
+					end
+					if inventory.Units then
+						for i, unit in ipairs(inventory.Units) do
+							print("---- Unit #" .. i .. " ----")
+							for k,v in pairs(unit) do
+								print("   ", k, "=", v)
+							end
+						end
+					end
+				else
+					warn("GetInventory return nil!")
+				end
+				-- 🔎 DEBUG PRINT END
+
 				if inventory and inventory.Units then
 					for _, unit in ipairs(inventory.Units) do
 						if unit.UnitType and unit.Rarity then
@@ -252,6 +272,7 @@ Tab:CreateToggle({
 		end)
 	end
 }, "AutoFavoriteUnit")
+
 
 -- QoL Tab
 local Tab: Tab = Window:CreateTab({
