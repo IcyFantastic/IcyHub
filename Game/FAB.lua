@@ -130,6 +130,33 @@ Tab:CreateToggle({
   end
 }, "AutoSellAll")
 
+-- Auto Favorite Fish (pakai Unit + RemoteEvent)
+Tab:CreateToggle({
+  Name = "Auto Favorite Fish",
+  Callback = function()
+    while Flags.AutoFavoriteFish.CurrentValue and task.wait(2) do
+      -- ambil inventory (Unit) lewat FishingService
+      local inventory = Services.FishingService.RF.GetInventory:InvokeServer()
+      if inventory then
+        for _, unit in ipairs(inventory) do
+          local fishInfo = FishData[unit.UnitType]
+          if fishInfo then
+            local rarity = fishInfo.Rarity or "Common"
+            for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption) do
+              if rarity == selectedRarity and not unit.IsFavorite then
+                -- Karena Favorite pake RE, kita FireServer
+                Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unit.Id, true)
+                Notify("Auto Favorite", "Favorited " .. unit.UnitType .. " (" .. rarity .. ")", "check")
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+}, "AutoFavoriteFish")
+
+
 -- Teleport Tab
 Tab:CreateSection("Teleport")
 
