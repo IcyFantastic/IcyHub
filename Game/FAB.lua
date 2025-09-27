@@ -220,70 +220,40 @@ Tab:CreateDropdown({
 	Callback = function() end
 }, "SelectFishRarity")
 
--- Auto Favorite Unit (fallback logic)
+-- Auto Favorite pas dapet ikan baru via RequestFish
 Tab:CreateToggle({
-	Name = "Auto Favorite Unit",
+	Name = "Auto Favorite New Fish",
 	CurrentValue = false,
-	Flag = "AutoFavoriteUnit",
+	Flag = "AutoFavoriteNewFish",
 	Callback = function(Value)
-		task.spawn(function()
-			while Value do
-				local inventory
+		if Value then
+			-- hook metamethod untuk RemoteFunction RequestFish
+			oldInvoke = hookfunction(Services.FishingService.RF.RequestFish.InvokeServer, function(self, ...)
+				local result = oldInvoke(self, ...)
 
-				-- ✅ Coba ambil inventory dari FishingService (kalau ada)
-				local fishingRF = Services.FishingService:FindFirstChild("RF")
-				if fishingRF and fishingRF:FindFirstChild("GetInventory") then
-					inventory = fishingRF.GetInventory:InvokeServer()
-				end
-
-				-- ✅ Fallback: coba cari di BackpackService (kalau ada)
-				if not inventory then
-					local backpackRF = Services.BackpackService:FindFirstChild("RF")
-					if backpackRF and backpackRF:FindFirstChild("GetInventory") then
-						inventory = backpackRF.GetInventory:InvokeServer()
-					end
-				end
-
-				-- ✅ Fallback terakhir: cek Shared.Data.Units
-				if not inventory then
-					local rs = game:GetService("ReplicatedStorage")
-					local sharedUnits = rs:FindFirstChild("Shared") and rs.Shared:FindFirstChild("Data") and rs.Shared.Data:FindFirstChild("Units")
-					if sharedUnits then
-						inventory = { Units = sharedUnits:GetChildren() }
-					end
-				end
-
-				-- 🚀 Proses favoritkan unit
-				if inventory and inventory.Units then
-					for _, unit in ipairs(inventory.Units) do
-						local rarity = unit.Rarity or unit:FindFirstChild("Rarity") and unit.Rarity.Value
-						local unitType = unit.UnitType or unit.Name
-						local isFav = unit.IsFavorite or false
-
-						if rarity and unitType then
-							for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption or {}) do
-								if rarity == selectedRarity and not isFav then
-									local unitId = unit.Id or unit.UnitId or unit.id or unit.Name
-									if unitId then
-										Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unitId, true)
-										Notify("Auto Favorite", "Favorited " .. tostring(unitType) .. " (" .. tostring(rarity) .. ")", "check")
-									else
-										warn("[AutoFavorite] Unit ga ada field Id:", unit)
-									end
-								end
+				if result and result.Unit and result.Unit.Rarity then
+					for _, selectedRarity in ipairs(Flags.SelectFishRarity.CurrentOption or {}) do
+						if result.Unit.Rarity == selectedRarity then
+							local unitId = result.Unit.Id or result.Unit.UnitId or result.Unit.id
+							if unitId then
+								Services.BackpackService.RE.FavoritedToolsUpdate:FireServer(unitId, true)
+								Notify("Auto Favorite", "Favorited " .. result.Unit.UnitType .. " (" .. result.Unit.Rarity .. ")", "check")
 							end
 						end
 					end
-				else
-					warn("[AutoFavorite] Inventory ga ketemu di FishingService, BackpackService, atau Shared.Data.Units")
 				end
 
-				task.wait(2)
+				return result
+			end)
+		else
+			-- matikan hook kalau toggle off
+			if oldInvoke then
+				hookfunction(Services.FishingService.RF.RequestFish.InvokeServer, oldInvoke)
+				oldInvoke = nil
 			end
-		end)
+		end
 	end
-}, "AutoFavoriteUnit")
-
+}, "AutoFavoriteNewFish")
 
 -- QoL Tab
 local Tab: Tab = Window:CreateTab({
