@@ -21,6 +21,8 @@ elseif GameId == 7436755782 then
     loadstring(game:HttpGet(baseUrl .. "GaG.lua"))()
 elseif GameId == 5682590751 then
     loadstring(game:HttpGet(baseUrl .. "L.lua"))()
+elseif GameId == 6701277882 then
+    loadstring(game:HttpGet(baseUrl .. "FishIt.lua))()
 else
     warn("[IcyHub Loader] Game not supported: " .. GameId)
 end
